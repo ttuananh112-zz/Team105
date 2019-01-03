@@ -33,7 +33,7 @@ class CNN32(tr.nn.Module):
         return X
 
 net= CNN32().to(device)
-net.load_state_dict(tr.load('sign_classi_param_9932_half', map_location=device))
+net.load_state_dict(tr.load('param/sign_classi_param_9932_half', map_location=device))
 
 def predict(img, new_size=32):
     img = np.array(img, dtype= np.float32) / 255.
