@@ -10,4 +10,4 @@ Lệnh khởi tạo package:
 
 $ catkin_make
 
-$ rolaunch Team105 Team105.launch
+$ roslaunch Team105 Team105.launch
