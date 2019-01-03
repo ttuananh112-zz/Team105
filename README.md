@@ -6,4 +6,3 @@ Chú ý: copy folder param vào trong folder ~/.ros
 Lệnh khởi tạo package:
 $ catkin_make
 $ rolaunch Team105 Team105.launch
-Connect và quẩy 
