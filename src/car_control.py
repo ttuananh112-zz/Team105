@@ -16,10 +16,10 @@ class car_control:
     def control(self, left_fit, right_fit, signWidth):
         if not rospy.is_shutdown():
             steerAngle = self.cal_steerAngle(left_fit, right_fit, signWidth)	
-            if math.fabs(steerAngle) >= 10 or signWidth != 0:
-                self.speed_pub.publish(40)
+            if math.fabs(steerAngle) >= 10 or signWidth > 35 or signWidth < -35:
+                self.speed_pub.publish(35)
             else:
-                self.speed_pub.publish(60)
+                self.speed_pub.publish(55)
 
     def cal_steerAngle(self, left_fit, right_fit, signWidth):
         carPos_x = 160

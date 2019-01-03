@@ -45,7 +45,7 @@ def detect_sign(image_np):
         if y2 > height:
             y2 = height
  
-        if (w > 30 and h > 30):
+        if (w > 5 and h > 5):
 
             pred = predict(img[y:y2, x:x2])
 
@@ -55,10 +55,10 @@ def detect_sign(image_np):
                 sign_y = y
                 cv2.rectangle(img, (x, y), (x2, y2), (0, 0, 255), 1)
                 if pred == 1:
-		    cv2.putText(img,'Turn right',(x,y), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255), 1, cv2.LINE_AA)
+		    cv2.putText(img,'Turn right',(x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255), 1, cv2.LINE_AA)
                     sign_size = w
                 else:
-		    cv2.putText(img,'Turn left',(x,y), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255), 1, cv2.LINE_AA)
+		    cv2.putText(img,'Turn left',(x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(0,0,255), 1, cv2.LINE_AA)
                     sign_size = -w
                 break
 
