@@ -15,7 +15,7 @@ class car_control:
         self.last_detected = 0
         self.sign_type = 0
         self.dataset_file = open("dataset.txt", "w")
-        self.dataset_writer = csv.writer(dataset_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        self.dataset_writer = csv.writer(self.dataset_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
     def control(self, left_fit, right_fit, signWidth):
         if not rospy.is_shutdown():
@@ -28,8 +28,13 @@ class car_control:
             
             self.steerAngle_pub.publish(steerAngle)
             self.speed_pub.publish(speed)
-            row = left_fit + right_fit + signWidth + steerAngle
-            print(row)
+            #row = left_fit + right_fit + [signWidth] + [steerAngle]
+	    row = []
+	    row.extend(left_fit)
+	    row.extend(right_fit)
+	    row.append(signWidth)
+	    row.append(steerAngle)
+	    print(row)
             self.dataset_writer.writerow(row)
 
     def cal_steerAngle(self, left_fit, right_fit, signWidth):
