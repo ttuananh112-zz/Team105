@@ -33,7 +33,7 @@ class CNN32(tr.nn.Module):
         return X
 
 net= CNN32().to(device)
-net.load_state_dict(tr.load('../param/sign_classi_param32_small'))
+net.load_state_dict(tr.load('param/sign_classi_param32_small'))
 
 def predict(img):
     new_size = 32
