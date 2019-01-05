@@ -123,7 +123,7 @@ class lane_detector:
 
         middlePos_y = np.array([120, 240])
 
-        print(self.laneWidth)
+        # print(self.laneWidth)
         # Detect nothing
         if left_fit[0] == 0 and right_fit[0] == 0:
             return (-1, -1, -1, -1)
@@ -147,7 +147,7 @@ class lane_detector:
             # print("WIDTH ", rightSide_x - leftSide_x)
             middlePos_x = (leftSide_x + rightSide_x) / 2
 
-        result = np.concatenate((middlePos_x, middlePos_y)).astype(int)
+        result = np.concatenate((middlePos_x, middlePos_y))
         return result
 
 
@@ -221,8 +221,8 @@ class lane_detector:
 
         # draw middle line
         line_img = np.zeros_like(source_img)
-        pts1 = (middlePos[0], middlePos[2])
-        pts2 = (middlePos[1], middlePos[3])
+        pts1 = (int(middlePos[0]), int(middlePos[2]))
+        pts2 = (int(middlePos[1]), int(middlePos[3]))
         cv2.line(line_img, pts1, pts2, (0, 255, 0), 2, cv2.LINE_AA)
         out_img = self.warp(source_img, line_img, dst, src)
 
@@ -256,7 +256,7 @@ class lane_detector:
         lane_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
         lane_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
-        cv2.imshow("Detect lane", lane_img)
-        cv2.waitKey(1)
+        # cv2.imshow("Detect lane", lane_img)
+        # cv2.waitKey(1)
 
         return out_img, middlePos

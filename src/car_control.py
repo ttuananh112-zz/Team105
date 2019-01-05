@@ -17,6 +17,7 @@ class car_control:
     def control(self, signWidth, middlePos):
         if not rospy.is_shutdown():
             steerAngle = self.cal_steerAngle(signWidth, middlePos)
+            # print(steerAngle)
             if math.fabs(steerAngle) >= 10 or signWidth > 35 or signWidth < -35:
                 self.speed_pub.publish(35)
             else:
@@ -29,7 +30,6 @@ class car_control:
         middlePos_x = middlePos[0]
         middlePos_y = middlePos[1]
 
-        steerAngle = 0
         now = time.time()
         if (signWidth > 35):
             self.last_detected = time.time()
@@ -40,6 +40,7 @@ class car_control:
 
         diff = now - self.last_detected
         if (diff > 0.3 and diff < 1.5):
+            print("diff")
             steerAngle = 20 * self.sign_type
             self.steerAngle_pub.publish(steerAngle)
         else:
@@ -54,7 +55,7 @@ class car_control:
 
                 # Angle to middle position
                 steerAngle = math.atan(distance_x / distance_y) * 180 / math.pi
-                # print(middlePos_x, steerAngle)
+                # print("cal ",steerAngle)
             self.steerAngle_pub.publish(steerAngle)
 
         return steerAngle

@@ -31,13 +31,14 @@ class image_converter:
             np_arr = np.fromstring(data.data, np.uint8)
             image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             # NOTE: image_np.shape = (240,320,3)
-            img, sign_x, sign_y, sign_size = detect_sign(image_np)
+            # sign_size = 0
+            img, middlePos = self.ld.lane_detect(image_np)
+
+            out_img, sign_x, sign_y, sign_size = detect_sign(img)
             # cv2.imshow("Image window", img)
             # cv2.waitKey(1)
 
             # image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
-            out_img, middlePos = self.ld.lane_detect(img)
-
             # print("Left ",left_fit," Right ",right_fit)
             cv2.imshow("Middle Pos", out_img)
             cv2.waitKey(1)
