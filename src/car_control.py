@@ -4,6 +4,7 @@ import cv2
 import math
 import time
 from time import sleep
+import csv
 
 class car_control:
     def __init__(self, team_number):
@@ -11,15 +12,25 @@ class car_control:
         self.steerAngle_pub = rospy.Publisher("Team"+team_number+"_steerAngle", Float32, queue_size=1)
         rospy.init_node('cds', anonymous = True)
         rospy.Rate(10)
-	self.last_detected = 0
-	self.sign_type = 0
+        self.last_detected = 0
+        self.sign_type = 0
+        self.dataset_file = open("dataset.txt", "w")
+        self.dataset_writer = csv.writer(dataset_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
     def control(self, left_fit, right_fit, signWidth):
         if not rospy.is_shutdown():
-            steerAngle = self.cal_steerAngle(left_fit, right_fit, signWidth)	
-            if math.fabs(steerAngle) >= 10 or signWidth > 35 or signWidth < -35:
-                self.speed_pub.publish(35)
+            steerAngle = self.cal_steerAngle(left_fit, right_fit, signWidth)
+            speed = 55
+            if math.fabs(steerAngle) >= 10 or math.fabs(signWidth) > 35:
+                speed = 35
             else:
-                self.speed_pub.publish(55)
+                speed = 55
+            
+            self.steerAngle_pub.publish(steerAngle)
+            self.speed_pub.publish(speed)
+            row = left_fit + right_fit + signWidth + steerAngle
+            print(row)
+            self.dataset_writer.writerow(row)
 
     def cal_steerAngle(self, left_fit, right_fit, signWidth):
         carPos_x = 160
@@ -27,18 +38,17 @@ class car_control:
 
         # Middle pos between two side of lane
         middlePos_x, middlePos_y = self.find_middlePos(left_fit, right_fit)
-	steerAngle = 0
-	now = time.time()
-	if (signWidth > 35):
-	    self.last_detected = time.time()
-	    self.sign_type = 1
-	if (signWidth < -35):
-	    self.last_detected = time.time()
-	    self.sign_type = -1
-	diff = now - self.last_detected
-	if (diff > 0.3 and diff < 1.5):
-	    steerAngle = 20 * self.sign_type
-	    self.steerAngle_pub.publish(steerAngle)
+        steerAngle = 0
+        now = time.time()
+        if (signWidth > 35):
+            self.last_detected = time.time()
+            self.sign_type = 1
+        if (signWidth < -35):
+            self.last_detected = time.time()
+            self.sign_type = -1
+        diff = now - self.last_detected
+        if (diff > 0.3 and diff < 1.5):
+            steerAngle = 20 * self.sign_type
         else:
             # print("STRAIGHT")
             # Can't detect lane
@@ -52,7 +62,6 @@ class car_control:
                 # Angle to middle position
                 steerAngle = math.atan(distance_x / distance_y) * 180 / math.pi
                 # print(middlePos_x, steerAngle)
-            self.steerAngle_pub.publish(steerAngle)
 
         return steerAngle
 
