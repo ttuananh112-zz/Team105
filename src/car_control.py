@@ -40,7 +40,6 @@ class car_control:
 
         diff = now - self.last_detected
         if (diff > 0.3 and diff < 1.5):
-            print("diff")
             steerAngle = 20 * self.sign_type
             self.steerAngle_pub.publish(steerAngle)
         else:
