@@ -47,7 +47,7 @@ def detect_sign(image_np):
             y2 = height
 
         if (w > 25 and h > 25 and 0.8 < h / w < 1.0 / 0.8):
-
+            print("pred")
             pred = predict(img[y:y2, x:x2])
 
             if pred != 0:

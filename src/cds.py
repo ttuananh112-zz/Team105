@@ -31,20 +31,20 @@ class image_converter:
             np_arr = np.fromstring(data.data, np.uint8)
             image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             # NOTE: image_np.shape = (240,320,3)
-            sign_size = 0
+            # sign_size = 0
             img, middlePos = self.ld.lane_detect(image_np)
 
-            out_img, sign_x, sign_y, sign_size = detect_sign(img)
+            # out_img, sign_x, sign_y, sign_size = detect_sign(img)
             # cv2.imshow("Image window", img)
             # cv2.waitKey(1)
 
             # image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
             # print("Left ",left_fit," Right ",right_fit)
-            cv2.imshow("View", out_img)
+            cv2.imshow("View", img)
             cv2.waitKey(1)
 
             # drive
-            self.cc.control(sign_size, (middlePos[0], middlePos[2]))
+            # self.cc.control(sign_size, (middlePos[0], middlePos[2]))
 
         except CvBridgeError as e:
             print(e)
@@ -53,13 +53,16 @@ class image_converter:
 
 if __name__ == '__main__':
     rospy.init_node('cds', anonymous=True)
-    # cv2.namedWindow("houghlines")
+    # cv2.namedWindow("white_shadow")
     # def nothing():
     #     pass
-    # cv2.createTrackbar("rho", "houghlines",2,255,nothing)
-    # cv2.createTrackbar("theta", "houghlines",180,255,nothing)
-    # cv2.createTrackbar("minLine", "houghlines",78,255,nothing)
-    # cv2.createTrackbar("maxGap", "houghlines",10,255,nothing)
+    #
+    # cv2.createTrackbar("h1", "white_shadow", 0, 255, nothing)
+    # cv2.createTrackbar("h2", "white_shadow", 0, 255, nothing)
+    # cv2.createTrackbar("l1", "white_shadow", 0, 255, nothing)
+    # cv2.createTrackbar("l2", "white_shadow", 0, 255, nothing)
+    # cv2.createTrackbar("s1", "white_shadow", 0, 255, nothing)
+    # cv2.createTrackbar("s2", "white_shadow", 0, 255, nothing)
     # cv2.waitKey(1)
     ic = image_converter()
     rospy.spin()

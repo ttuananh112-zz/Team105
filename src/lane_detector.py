@@ -27,16 +27,39 @@ class lane_detector:
 
 
     # detect white line (210, 240)
-    def hls_l_thresh(self, img, thresh=(210, 240)):
-        # 1) Convert to HLS color space
+    def hls_l_thresh(self, img, thresh_white=(210, 240)):
+        # using lightness channel
         hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
         hls_l = hls[:,:,1]
         hls_l = hls_l*(255/np.max(hls_l))
-        # 2) Apply a threshold to the L channel
+
+        # detect shadow
+        # mean_l = np.mean(hls_l)
+        # std_l = np.std(hls_l)
+        # detect_shadow = np.zeros_like(hls_l)
+        # detect_shadow[(hls_l <= (mean_l - std_l / 3)) & (hls_l != 0)] = 255
+
+        # cv2.imshow("Detect shadow", detect_shadow)
+        # cv2.waitKey(1)
+
+        # enhance shadow segment
+        # nonzero = detect_shadow.nonzero()
+        # hls_l[nonzero] = hls_l[nonzero] + 100
+
         binary_output = np.zeros_like(hls_l)
-        binary_output[(hls_l > thresh[0]) & (hls_l <= thresh[1])] = 1
-        # 3) Return a binary image of threshold result
+        binary_output[(hls_l > thresh_white[0]) & (hls_l <= thresh_white[1])] = 255
+
         return binary_output
+
+    # detect white lane in shadow (140,143)
+    def detect_white_shadow(self, img, threshold=(140,143)):
+        lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+        lab_b = lab[:,:,2]
+
+        bin_out = np.zeros_like(lab_b)
+        bin_out[(lab_b >= threshold[0]) & (lab_b <= threshold[1])] = 255
+
+        return bin_out
 
     def sliding_window_polyfit(self, img):
         # Take a histogram of the bottom half of the image
@@ -169,29 +192,48 @@ class lane_detector:
         # change perspective to bird's view
         unwarped = self.unwarp(source_img, src, dst)
 
-        bin_white = self.hls_l_thresh(unwarped)
-        # cv2.imshow("Before dilate", bin_white*255)
+        # cv2.imshow("unwarp", unwarped)
         # cv2.waitKey(1)
+
+        # detect white
+        bin_white = self.hls_l_thresh(unwarped)
+
+        # detect white shadow
+        bin_white_shadow = self.detect_white_shadow(unwarped)
+
+        # combined
+        bin_out = np.zeros_like(bin_white)
+        bin_out[(bin_white == 255) | (bin_white_shadow == 255)] = 255
+
 
         # dilate
         kernel = np.ones((3, 3), np.uint8)
-        bin_white = cv2.dilate(bin_white, kernel,iterations=1)
+        bin_out = cv2.dilate(bin_out, kernel,iterations=1)
 
-        gray_img = bin_white * 255
+        cv2.imshow("white + shadow", bin_out)
+        cv2.waitKey(1)
 
-        # cv2.imshow("Bird_view_bin", gray_img)
+        # detect white in shadow
+        # h1 = cv2.getTrackbarPos("h1", "white_shadow")
+        # h2 = cv2.getTrackbarPos("h2", "white_shadow")
+        # l1 = cv2.getTrackbarPos("l1", "white_shadow")
+        # l2 = cv2.getTrackbarPos("l2", "white_shadow")
+        # s1 = cv2.getTrackbarPos("s1", "white_shadow")
+        # s2 = cv2.getTrackbarPos("s2", "white_shadow")
+
+        # blur
+        # bin_white = cv2.GaussianBlur(bin_white, (5, 5), 0)
+        # cv2.imshow("blur", bin_white)
+        # edge detection
+        # bin_white = cv2.Canny(bin_white, 200, 255)
+        #
+        # cv2.imshow("Canny", bin_white)
         # cv2.waitKey(1)
 
         # Detect lines
-        # lines = cv2.HoughLinesP(gray_img, 1, np.pi / 180, 128, minLineLength = 30, maxLineGap = 2)
-        # rho = cv2.getTrackbarPos("rho", "houghlines")
-        # theta = cv2.getTrackbarPos("theta", "houghlines")
-        # minLine = cv2.getTrackbarPos("minLine", "houghlines")
-        # maxGap = cv2.getTrackbarPos("maxGap", "houghlines")
+        lines = cv2.HoughLinesP(bin_out, 2, np.pi / 180, 128, minLineLength=78,maxLineGap=10)
 
-        lines = cv2.HoughLinesP(gray_img, 2, np.pi / 180, 128, minLineLength=78,maxLineGap=10)
-
-        houghline_img = np.zeros_like(bin_white)
+        houghline_img = np.zeros_like(bin_out)
         if lines is not None:
             for i in range(0, len(lines)):
                 l = lines[i][0]
@@ -200,17 +242,12 @@ class lane_detector:
         # cv2.imshow("Detect_line", houghline_img)
         # cv2.waitKey(1)
 
-        # threshold -> bin_houghline
-        # bin_houghline = np.zeros_like(bin_white)
-        # bin_houghline[houghline_img > 128] = 1
+        # AND bin_houghline & bin_out
+        bin_line_only = np.zeros_like(bin_out)
+        bin_line_only[(houghline_img == 255) & (bin_out == 255)] = 1
 
-        # AND bin_houghline & bin_white
-        bin_line_only = np.zeros_like(bin_white)
-        bin_line_only[(houghline_img == 255) & (bin_white == 1)] = 1
-        bin_line_only = bin_line_only * 255
-
-        # cv2.imshow("Lines only", bin_line_only)
-        # cv2.waitKey(1)
+        cv2.imshow("Lines only", bin_line_only*255)
+        cv2.waitKey(1)
 
         left_fit, right_fit, left_lane_inds, right_lane_inds, visualization_data = self.sliding_window_polyfit(bin_line_only)
 
@@ -228,33 +265,33 @@ class lane_detector:
 
 
         # Create an output image to draw on and  visualize the result
-        lane_img = np.uint8(np.dstack((bin_line_only, bin_line_only, bin_line_only)) * 255)
-
-        try:
-            # Generate x and y values for plotting
-            ploty = np.linspace(0, bin_line_only.shape[0] - 1, bin_line_only.shape[0]//2)
-            left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
-            right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
-
-            pts1 = np.vstack((left_fitx, ploty)).astype(np.int32).T
-            pts2 = np.vstack((right_fitx, ploty)).astype(np.int32).T
-            # Plot
-            cv2.polylines(lane_img, [pts1], False, (0,255,255), 1)
-            cv2.polylines(lane_img, [pts2], False, (0,255,255), 1)
-        except:
-            pass
-        # Draw the windows on the visualization image
-        for rect in rectangles:
-            cv2.rectangle(lane_img, (rect[2], rect[0]), (rect[3], rect[1]), (0, 255, 0), 2)
-            cv2.rectangle(lane_img, (rect[4], rect[0]), (rect[5], rect[1]), (0, 255, 0), 2)
-
-        # Identify the x and y positions of all nonzero pixels in the image
-        nonzero = bin_line_only.nonzero()
-        nonzeroy = np.array(nonzero[0])
-        nonzerox = np.array(nonzero[1])
-        # Change color of nonzero pixels
-        lane_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-        lane_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+        # lane_img = np.uint8(np.dstack((bin_line_only, bin_line_only, bin_line_only)) * 255)
+        #
+        # try:
+        #     # Generate x and y values for plotting
+        #     ploty = np.linspace(0, bin_line_only.shape[0] - 1, bin_line_only.shape[0]//2)
+        #     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+        #     right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
+        #
+        #     pts1 = np.vstack((left_fitx, ploty)).astype(np.int32).T
+        #     pts2 = np.vstack((right_fitx, ploty)).astype(np.int32).T
+        #     # Plot
+        #     cv2.polylines(lane_img, [pts1], False, (0,255,255), 1)
+        #     cv2.polylines(lane_img, [pts2], False, (0,255,255), 1)
+        # except:
+        #     pass
+        # # Draw the windows on the visualization image
+        # for rect in rectangles:
+        #     cv2.rectangle(lane_img, (rect[2], rect[0]), (rect[3], rect[1]), (0, 255, 0), 2)
+        #     cv2.rectangle(lane_img, (rect[4], rect[0]), (rect[5], rect[1]), (0, 255, 0), 2)
+        #
+        # # Identify the x and y positions of all nonzero pixels in the image
+        # nonzero = bin_line_only.nonzero()
+        # nonzeroy = np.array(nonzero[0])
+        # nonzerox = np.array(nonzero[1])
+        # # Change color of nonzero pixels
+        # lane_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+        # lane_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
         # cv2.imshow("Detect lane", lane_img)
         # cv2.waitKey(1)
